@@ -62,7 +62,7 @@ SockAddr_In Configuration::GetAddress(MulticastGroup g)
 
 SockAddr_In Configuration::GetAddress()
 {
-	return SockAddr_In(TMM_FQDN).port(port);
+	return SockAddr_In(TMM).port(port);
 }
 
 SockAddr_In Configuration::GetAddress(MediaSource s)
@@ -108,10 +108,13 @@ SockAddr_In Configuration::GetMyTMM_Interface()								//used for the TMM  -ofte
 	return Configuration::GetInterfaceAddress(Configuration::GetAddress()).port(port);
 }
 
-Configuration::Configuration(MediaSource me_, SharedMemory<TMM_CntlBuffer>&  ctrl_buffer_):me(me_), ctrl_buffer(ctrl_buffer_)
+Configuration::Configuration(MediaSource me_, SharedMemory<TMM_CntlBuffer>&  ctrl_buffer_):me(me_), ctrl_buffer(ctrl_buffer_),TMM(TMM_FQDN)
 {
 }
 
+Configuration::Configuration(MediaSource me_, SharedMemory<TMM_CntlBuffer>&  ctrl_buffer_, const char * TMM_):me(me_), ctrl_buffer(ctrl_buffer_),TMM(TMM_)
+{
+}
 
 
 

@@ -58,19 +58,29 @@ void TMM_ReaderThread::Context::do_thread (std::shared_ptr<Context> pctx)
 
 	int TMM_sock(0);
 	int external_sock(0);
+	int TMM_loopback_sock(0);
 
 	do
 	{
 		//first step - create socket to read TMM
-		SockAddr_In tmm_local_addr = 	pctx->config->GetMyTMM_Interface(); 		//this is the local interface to use - so we dont have to listen on in addr_any;
-		SockAddr_In tmm_remote_addr = 	pctx->config->GetAddress().port(0);  		//this is the address of the TMM - we dont care what port the data comes from
+		SockAddr_In tmm_local_addr = 	pctx->config->GetMyTMM_Interface(); 		//this is the local interface to use - so we dont have to listen on in addr_any - specify the port we need to listen on;
 
 		if ((TMM_sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) break;
 
 		if (bind (TMM_sock, (struct sockaddr *) &tmm_local_addr.addr, sizeof(tmm_local_addr.addr)) < 0) break; //bind the interface
 
-		if (connect (TMM_sock, (struct sockaddr *) &tmm_remote_addr.addr, sizeof(tmm_remote_addr.addr)) < 0) break;//connect the interface - we now only listen to data from the right address
+		//we may not need to do this -as we only recv on this socket - it doesnt need to be in the connected state
+		//if (connect (TMM_sock, (struct sockaddr *) &tmm_remote_addr.addr, sizeof(tmm_remote_addr.addr)) < 0) break;//connect the interface - we now only listen to data from the right address - on the correct interface
 
+		//create a loopback socket - incase we need it
+		SockAddr_In tmm_local_loopback_addr = 	pctx->config->GetMyTMM_Interface().port(0); //this is the local interface to use - any port - we are sending to the TMM
+		SockAddr_In tmm_remote_loopback_addr = 	pctx->config->GetAddress();  				//this is the address of the TMM - with the correct port;
+
+		if ((TMM_loopback_sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) break;
+
+		if (bind (TMM_loopback_sock, (struct sockaddr *) &tmm_local_loopback_addr.addr, sizeof(tmm_local_loopback_addr.addr)) < 0) break; //bind the interface
+
+		if (connect (TMM_loopback_sock, (struct sockaddr *) &tmm_remote_loopback_addr.addr, sizeof(tmm_remote_loopback_addr.addr)) < 0) break;//connect the interface - we now only listen to data from the right address
 
 		SockAddr_In external_local_addr = 	pctx->config->GetMyExternalInterface();  		//this is my address to the outside world
 
@@ -91,7 +101,10 @@ void TMM_ReaderThread::Context::do_thread (std::shared_ptr<Context> pctx)
 		do
 		{
 			buffer_used=recv(TMM_sock,buffer,sizeof(buffer),0);
-//			pctx->config->ctrl_buffer->Dump();
+			//local loopback mirror function - send back packets from the TMM back to the TMM
+			if (pctx->config->ctrl_buffer->remote_loop_back)
+				send(TMM_loopback_sock,buffer,static_cast<size_t>(buffer_used),0); //mirror it out as a remote loopback
+			//			pctx->config->ctrl_buffer->Dump();
 			if (buffer_used >0)
 			{
 				//we have recevied a packet - now forward it to all active destinations
@@ -99,7 +112,7 @@ void TMM_ReaderThread::Context::do_thread (std::shared_ptr<Context> pctx)
 				{
 					if (SendToAddressCache[g].isValid() && pctx->config->ctrl_buffer->isEnabled(pctx->config->me,MulticastGroup(g))) //we know how to route it and we want to
 					{
-//						std::cout << "Send to mcg " << MulticastGroup(g).getName() << " source " << pctx->config->me.getName() << std::endl;
+						//						std::cout << "Send to mcg " << MulticastGroup(g).getName() << " source " << pctx->config->me.getName() << std::endl;
 						sendto(external_sock,buffer,static_cast<size_t>(buffer_used),0, (struct sockaddr*)(&SendToAddressCache[g].addr),sizeof(SendToAddressCache[g].addr));
 					}
 				}
@@ -110,19 +123,20 @@ void TMM_ReaderThread::Context::do_thread (std::shared_ptr<Context> pctx)
 		while (!TMM_ReaderThread::halt_threads);
 	} while(false);
 	close(TMM_sock);
+	close(TMM_loopback_sock);
 	close(external_sock);
 }
 
 
 
 TMM_ReaderThread::TMM_ReaderThread () :
-					  pcontext (new Context)
+							  pcontext (new Context)
 {
 }
 
 
 TMM_ReaderThread::TMM_ReaderThread (Configuration* config_) :
-					  pcontext (new Context (config_))
+							  pcontext (new Context (config_))
 {
 }
 

@@ -33,6 +33,8 @@ public:
 
 	void Dump(void) { Dump(enabled,"Enabled"); Dump(active,"Active"); }
 
+    std::atomic<bool>					local_loop_back;
+    std::atomic<bool>					remote_loop_back;
 
 
 private:

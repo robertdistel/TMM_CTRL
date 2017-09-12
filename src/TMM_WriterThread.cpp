@@ -62,6 +62,8 @@ void TMM_WriterThread::Context::do_thread (std::shared_ptr<Context> pctx)
 
 	int TMM_sock(0);
 	int external_sock(0);
+	int TMM_loopback_sock(0);
+
 
 	do
 	{
@@ -77,6 +79,16 @@ void TMM_WriterThread::Context::do_thread (std::shared_ptr<Context> pctx)
 
 		if (connect (TMM_sock, (struct sockaddr *) &tmm_remote_addr.addr, sizeof(tmm_remote_addr.addr)) < 0)
 			break;//connect the interface - we now only listen to data from the right address
+
+		//create a loopback socket - incase we need it
+		SockAddr_In tmm_remote_loopback_addr= 	pctx->config->GetMyTMM_Interface(); 	//this is the local interface to use - with the correct port - this is where the data is going on loopback
+		SockAddr_In tmm_local_loopback_addr  = 	SockAddr_In().port(0);  				//this is where its coming from - we dont care about the source - its set to inaddr_any
+
+		if ((TMM_loopback_sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) break;
+
+		if (bind (TMM_loopback_sock, (struct sockaddr *) &tmm_local_loopback_addr.addr, sizeof(tmm_local_loopback_addr.addr)) < 0) break; //bind the interface
+
+		if (connect (TMM_loopback_sock, (struct sockaddr *) &tmm_remote_loopback_addr.addr, sizeof(tmm_remote_loopback_addr.addr)) < 0) break;//connect the interface - we now only listen to data from the right address
 
 
 		SockAddr_In external_local_addr = 	pctx->config->GetMyExternalInterface();  		//this is my address to the outside world
@@ -126,6 +138,8 @@ void TMM_WriterThread::Context::do_thread (std::shared_ptr<Context> pctx)
 					if (pctx->config->ctrl_buffer->isEnabled(k->second,pctx->mg)) //its enabled so it needs to be forwarded as well
 					{
 						send(TMM_sock,buffer,static_cast<size_t>(buffer_used),0);
+						if (pctx->config->ctrl_buffer->local_loop_back)
+							send(TMM_loopback_sock,buffer,static_cast<size_t>(buffer_used),0);
 					}
 				}
 			}
@@ -133,6 +147,7 @@ void TMM_WriterThread::Context::do_thread (std::shared_ptr<Context> pctx)
 		while (!TMM_WriterThread::halt_threads);
 	} while(false);
 	close(TMM_sock);
+	close(TMM_loopback_sock);
 	close(external_sock);
 }
 

@@ -36,6 +36,7 @@ class Configuration
 {
 public:
 	Configuration(MediaSource me_, SharedMemory<TMM_CntlBuffer>&  ctrl_buffer_);
+	Configuration(MediaSource me_, SharedMemory<TMM_CntlBuffer>&  ctrl_buffer_, const char* TMM_);
 	SockAddr_In GetAddress(MulticastGroup g);  				//multicast address to send datagrams to
 	SockAddr_In GetAddress(); 									//used for the TMM
 	SockAddr_In GetAddress(MediaSource s);							//Unicast address to filter datagrams with
@@ -45,6 +46,7 @@ public:
 
 	MediaSource me;													//	the address by which everyone else uses to identify me
 	SharedMemory<TMM_CntlBuffer>&  ctrl_buffer;
+	const char* TMM;
 	SockAddr_In GetInterfaceAddress(const SockAddr_In& addr );	//the address of the interface used to send datagrams to supplied address - so you can bind to a specific interface only
 
 };

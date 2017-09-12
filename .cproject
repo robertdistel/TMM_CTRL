@@ -24,7 +24,7 @@
 								<option id="gnu.cpp.compiler.option.include.paths.2052612990" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
-									<listOptionValue builtIn="false" value="../../Qt/QT_UI/"/>
+									<listOptionValue builtIn="false" value="../../QT_UI/src"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.optimization.level.1285190801" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.930300419" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
@@ -35,7 +35,7 @@
 								<option id="gnu.c.compiler.option.include.paths.1413479796" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
-									<listOptionValue builtIn="false" value="../../Qt/QT_UI/"/>
+									<listOptionValue builtIn="false" value="../../QT_UI/src"/>
 								</option>
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.1972260856" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.1710006526" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
@@ -61,6 +61,9 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="cdt.managedbuild.config.gnu.cross.exe.debug.2004268909.252068444.370873352" name="constants.cpp" rcbsApplicability="disable" resourcePath="src/constants.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.base.336532079.1100819521">
+						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.336532079.1100819521" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.336532079"/>
+					</fileInfo>
 					<sourceEntries>
 						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
@@ -185,5 +188,12 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="X64_Debug">
+			<resource resourceType="PROJECT" workspacePath="/TMM_CTRL"/>
+		</configuration>
+		<configuration configurationName="ARM_Debug">
+			<resource resourceType="PROJECT" workspacePath="/TMM_CTRL"/>
+		</configuration>
+	</storageModule>
 </cproject>

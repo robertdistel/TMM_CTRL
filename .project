@@ -28,7 +28,7 @@
 		<link>
 			<name>src/constants.cpp</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Qt/QT_UI/constants.cpp</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/QT_UI/src/constants.cpp</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
