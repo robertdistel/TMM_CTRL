@@ -44,14 +44,33 @@ main (int argc, char** argv)
 	  bool remote_loop_back(false);
 	  std::string TMM_name;
 
+	  const char* RemoteLoopBackHelp =
+	  "Activate Remote Loopback\n\n"
+	  "  Normal Operation        Remote Loop Back\n\n"
+      "    +>>>>>>>>>+             +>>>>>>>>>+      \n"
+	  "    ^         v             ^         v      \n"
+	  "TMM=+         +=CTRL    TMM=+         v//=CTRL\n"
+	  "    ^         v             ^         v      \n"
+      "    +<<<<<<<<<+             +<<<<<<<<<+      \n";
+
+	  const char* LocalLoopBackHelp =
+	  "Activate Local Loopback\n\n"
+	  "  Normal Operation        Local Loop Back\n\n"
+	  "    +>>>>>>>>>+             +>>>//+>>>+     \n"
+	  "    ^         v             ^     ^   v     \n"
+	  "TMM=+         +=CTRL    TMM=+     ^   +=CTRL\n"
+	  "    ^         v             ^     ^   v     \n"
+	  "    +<<<<<<<<<+             +<<<//+<<<+     \n";
+
+
   po::options_description description ("MyTool Usage");
   description.add_options ()
         ("ctrl_file", po::value<std::string > (&ctrl_file_name), (std::string("file used as persistent swap \n default=")+ctrl_file_name).c_str())
 		("re-init", po::value<bool> (&initialise_swap), "reset persistent swap back to default")
 		("tmm",po::value<std::string>(&TMM_name),"tmm to use - defaults to raspi0.local")
 		("identity,i", po::value<uint16_t > (&identity), supported_names.c_str())
-		("local-loop-back",po::value<bool> (&local_loop_back),"loop back data to TMM to simulate data from TMM")
-		("remote_loop-back",po::value<bool> (&remote_loop_back),"loop back data from TMM back to the TMM")
+		("local-loop-back",po::value<bool> (&local_loop_back),LocalLoopBackHelp)
+		("remote-loop-back",po::value<bool> (&remote_loop_back),RemoteLoopBackHelp)
 		("help,h", "Display this help message")
 		("version,v", "Display the version number");
   po::variables_map vm;

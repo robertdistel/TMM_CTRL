@@ -26,9 +26,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>src/constants.cpp</name>
+			<name>src/TMM_Frame.cpp</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/QT_UI/src/constants.cpp</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/TMM_AGENT/src/TMM_Frame.cpp</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

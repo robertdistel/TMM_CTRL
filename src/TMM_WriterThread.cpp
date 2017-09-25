@@ -29,6 +29,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include "TMM_Frame.h"
 
 
 
@@ -56,7 +57,7 @@ public:
 
 void TMM_WriterThread::Context::do_thread (std::shared_ptr<Context> pctx)
 {
-	uint8_t buffer[2048]; 	//allocate a 2K buffer
+	TMM_Frame frame; 	//allocate a 2K buffer
 	ssize_t  buffer_used(0);	//how much of the buffer is actually in use
 
 
@@ -126,20 +127,23 @@ void TMM_WriterThread::Context::do_thread (std::shared_ptr<Context> pctx)
 			SockAddr_In source_address;
 			socklen_t socklen(sizeof(source_address.addr));
 
-			buffer_used=recvfrom(external_sock,buffer,sizeof(buffer),0,(struct sockaddr*)(&source_address.addr),&socklen);
+			buffer_used=recvfrom(external_sock,frame.frame(),TMM_Frame::maxFrameSize,0,(struct sockaddr*)(&source_address.addr),&socklen);
 //			pctx->config->ctrl_buffer->Dump();
-			if (buffer_used >0)
+			if (buffer_used >0 && pctx->config->ctrl_buffer->domain_mask[frame.domain_ID()]) //there is data and the domain is one we are currently interested in
 			{
 				auto k=source_lookup_table.find(source_address);
 				if (k!=source_lookup_table.end()) //the address is one we want to process
 				{
 //					std::cout << "Recv from mcg " << pctx->mg.getName() << " source " << k->second.getName() << std::endl;
 					pctx->config->ctrl_buffer->setActive(k->second,pctx->mg);		//flag it as active (even if we dont forward it
-					if (pctx->config->ctrl_buffer->isEnabled(k->second,pctx->mg)) //its enabled so it needs to be forwarded as well
+					pctx->config->ctrl_buffer->setPower(k->second,frame.pwr()+frame.gain());		//set the frame power so the control head can read it later
+					frame.gain(frame.gain()+pctx->config->ctrl_buffer->getGain(k->second)); //and add the current gain setting to the power
+					if (pctx->config->ctrl_buffer->isEnabled(k->second,pctx->mg) && frame.pwr()>-60) //its enabled so it needs to be forwarded as well as not being effectively silence
 					{
-						send(TMM_sock,buffer,static_cast<size_t>(buffer_used),0);
 						if (pctx->config->ctrl_buffer->local_loop_back)
-							send(TMM_loopback_sock,buffer,static_cast<size_t>(buffer_used),0);
+							send(TMM_loopback_sock,frame.frame(),frame.packet_sz(),0);
+						else
+							send(TMM_sock,frame.frame(),frame.packet_sz(),0);
 					}
 				}
 			}
