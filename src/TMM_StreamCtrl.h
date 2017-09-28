@@ -11,7 +11,7 @@
 
 #include "media_source.h"
 #include "multicast_group.h"
-#if (ATOMIC_BOOL_LOCK_FREE==2)  //bool supports all operations without a lock
+#if (ATOMIC_BOOL_LOCK_FREE!=0 && ATOMIC_CHAR_LOCK_FREE!=0)  //bool supports all operations without a lock
 
 
 class TMM_CntlBuffer
@@ -31,6 +31,8 @@ public:
     inline void setEnabled(MediaSource s, MulticastGroup g){enabled[uint8_t(s)][uint8_t(g)]=true;}
     inline void clearEnabled(MediaSource s, MulticastGroup g){enabled[uint8_t(s)][uint8_t(g)]=false;}
 
+
+
     inline int8_t   getGain(MediaSource s){return gain[uint8_t(s)];}
     inline void     setGain(MediaSource s, int8_t g){gain[uint8_t(s)]=g;}
     inline int8_t   getPower(MediaSource s){return power[uint8_t(s)];}
@@ -46,6 +48,7 @@ public:
     inline void     setTMM_MasterHeadsetGain(int8_t g){TMM_HeadsetGain=g;}
 
 	void Dump(void) { Dump(enabled,"Enabled"); Dump(active,"Active"); }
+    void doCommandLine(const std::string& command_line);
 
     std::atomic<bool>					local_loop_back;
     std::atomic<bool>					remote_loop_back;

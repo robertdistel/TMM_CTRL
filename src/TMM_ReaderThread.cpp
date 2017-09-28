@@ -48,6 +48,12 @@ public:
 	static void do_thread (std::shared_ptr<Context> pctx);
 };
 
+#define CHECK(FUNC,...) if(FUNC( __VA_ARGS__ )<0) 																					\
+{												 																					\
+	std::cerr << "Socket Operation " << #FUNC << " failed in " << __PRETTY_FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ <<")"; 	\
+	perror(0); 																														\
+	break; 																															\
+}
 
 
 
@@ -68,7 +74,12 @@ void TMM_ReaderThread::Context::do_thread (std::shared_ptr<Context> pctx)
 
 		if ((TMM_sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) break;
 
-		if (bind (TMM_sock, (struct sockaddr *) &tmm_local_addr.addr, sizeof(tmm_local_addr.addr)) < 0) break; //bind the interface
+		int reuse = 1;																		//permit the same  local address to be reused - you need this as the filtering of mc groups takes place at a higher layer
+		//the OS sees this as multiple sockets bound to the same local address and port number....
+		CHECK (setsockopt, TMM_sock, SOL_SOCKET, SO_REUSEADDR, (int *)&reuse, sizeof(reuse));
+
+
+		CHECK (bind , TMM_sock, (struct sockaddr *) &tmm_local_addr.addr, sizeof(tmm_local_addr.addr)) //bind the interface
 
 		//we may not need to do this -as we only recv on this socket - it doesnt need to be in the connected state
 		//if (connect (TMM_sock, (struct sockaddr *) &tmm_remote_addr.addr, sizeof(tmm_remote_addr.addr)) < 0) break;//connect the interface - we now only listen to data from the right address - on the correct interface
@@ -79,19 +90,19 @@ void TMM_ReaderThread::Context::do_thread (std::shared_ptr<Context> pctx)
 
 		if ((TMM_loopback_sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) break;
 
-		if (bind (TMM_loopback_sock, (struct sockaddr *) &tmm_local_loopback_addr.addr, sizeof(tmm_local_loopback_addr.addr)) < 0) break; //bind the interface
+		CHECK (bind ,TMM_loopback_sock, (struct sockaddr *) &tmm_local_loopback_addr.addr, sizeof(tmm_local_loopback_addr.addr)); //bind the interface
 
-		if (connect (TMM_loopback_sock, (struct sockaddr *) &tmm_remote_loopback_addr.addr, sizeof(tmm_remote_loopback_addr.addr)) < 0) break;//connect the interface - we now only listen to data from the right address
+		CHECK (connect , TMM_loopback_sock, (struct sockaddr *) &tmm_remote_loopback_addr.addr, sizeof(tmm_remote_loopback_addr.addr));//connect the interface - we now only listen to data from the right address
 
 		SockAddr_In external_local_addr = 	pctx->config->GetMyExternalInterface();  		//this is my address to the outside world
 
 		if ((external_sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) break;
 
 		//set up multicast if differently - effectively this binds the interface so that packets sent originate from here
-		if(setsockopt(external_sock, IPPROTO_IP, IP_MULTICAST_IF, (char *)&external_local_addr.addr, sizeof(external_local_addr.addr)) < 0) break;
+		CHECK (setsockopt , external_sock, IPPROTO_IP, IP_MULTICAST_IF, (char *)&external_local_addr.addr, sizeof(external_local_addr.addr)) ;
 		char loopch = 0;
 		//and disable loopback - we don't want to see our own packets
-		if(setsockopt(external_sock, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopch, sizeof(loopch)) < 0) break;
+		CHECK (setsockopt , external_sock, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopch, sizeof(loopch));
 
 
 		std::vector< SockAddr_In > SendToAddressCache(MulticastGroup::size());

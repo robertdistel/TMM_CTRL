@@ -13,6 +13,7 @@
 #include "TMM_StreamCtrl.h"
 #include "multicast_group.h"
 #include "sharedmemory.h"
+#include <iostream>
 
 class SockAddr_In
 {
@@ -21,12 +22,17 @@ public:
 	SockAddr_In();
 	SockAddr_In(const SockAddr_In& rhs);
 	SockAddr_In(const char* name);
+	SockAddr_In(const sockaddr_in& addr_):addr(addr_){};
 	short port()const ;
 	SockAddr_In& port(const short p) ;
 	uint32_t host() const;
 	SockAddr_In& host(uint32_t h);
 	bool isValid();
 	bool operator<(const SockAddr_In& rhs) const;
+
+	friend
+	std::ostream& operator << (std::ostream& lhs, const SockAddr_In& rhs );
+
 };
 
 

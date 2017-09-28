@@ -12,6 +12,12 @@
 #include <stdlib.h>
 #include <unistd.h>    //close
 #include <string>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 
 
 const char * MulticastGroupFQDN[] = {
@@ -36,8 +42,12 @@ const short port=12345;
 bool SockAddr_In::isValid(){ return addr.sin_family !=0; }
 bool SockAddr_In::operator<(const SockAddr_In& rhs) const {return addr.sin_port<rhs.addr.sin_port || (addr.sin_port==rhs.addr.sin_port && addr.sin_addr.s_addr<rhs.addr.sin_addr.s_addr);}
 
+std::ostream& operator << (std::ostream& lhs, const SockAddr_In& rhs )
+{
+		return lhs << "addr.sin_family:" << rhs.addr.sin_family << "\n addr.sin_addr.s_addr:" << inet_ntoa(rhs.addr.sin_addr) << "\n addr.sin_port:" << ntohs(rhs.addr.sin_port) << std::endl;
+}
 
-SockAddr_In::SockAddr_In() {memset(&addr,0,sizeof(sockaddr_in));}
+SockAddr_In::SockAddr_In() {memset(&addr,0,sizeof(sockaddr_in));  addr.sin_addr.s_addr=INADDR_ANY;}
 SockAddr_In::SockAddr_In(const SockAddr_In& rhs){if (this!=&rhs) memcpy(&addr,&rhs.addr,sizeof(sockaddr_in));}
 SockAddr_In::SockAddr_In(const char* name)
 {
@@ -51,9 +61,62 @@ SockAddr_In::SockAddr_In(const char* name)
 	addr.sin_addr.s_addr = *((unsigned long *) host->h_addr_list[0]); /* Incoming addr */
 }
 short SockAddr_In::port() const {return ntohs(addr.sin_port);}
-SockAddr_In& SockAddr_In::port(const short p) {addr.sin_port=htons(p); return *this;}
+SockAddr_In& SockAddr_In::port(const short p) {addr.sin_family = AF_INET; addr.sin_port=htons(p); return *this;}
 uint32_t SockAddr_In::host() const {return ntohl(addr.sin_addr.s_addr);}
-SockAddr_In& SockAddr_In::host(uint32_t h) {addr.sin_addr.s_addr = htonl(h); return *this;}
+SockAddr_In& SockAddr_In::host(uint32_t h) {addr.sin_family = AF_INET; addr.sin_addr.s_addr = htonl(h); return *this;}
+
+uint32_t getAddrForIF(const char* ifname)
+{
+  int fd;
+  struct ifreq ifr;
+
+  fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+  /* I want to get an IPv4 IP address */
+  ifr.ifr_addr.sa_family = AF_INET;
+
+  /* I want an IP address attached to "eth0" */
+  strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
+
+  ioctl(fd, SIOCGIFADDR, &ifr);
+
+  close(fd);
+
+  //result is in network byte order
+  return ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
+}
+
+SockAddr_In GetDefaultIf ( void )
+{
+	FILE *f;
+	char line[100] , *p , *c,  *saveptr;
+	uint32_t ifaddr(0);
+	SockAddr_In addr;
+
+
+	if((f = fopen("/proc/net/route" , "r"))>=0)
+	{
+
+		while(fgets(line , 100 , f))
+		{
+			p = strtok_r(line , " \t", &saveptr);
+			c = strtok_r(NULL , " \t", &saveptr);
+
+			if(p!=NULL && c!=NULL)
+			{
+				if(strcmp(c , "00000000") == 0)
+				{ //found default route through interface - now turn it into and IP address for that interface
+					ifaddr = getAddrForIF(p);
+				}
+			}
+		}
+
+		fclose(f);
+	}
+
+	addr.host(ifaddr).port(0);
+	return addr;
+}
 
 SockAddr_In Configuration::GetAddress(MulticastGroup g)
 {
@@ -75,7 +138,7 @@ SockAddr_In Configuration::GetAddress(MediaSource s)
 
 SockAddr_In Configuration::GetMyExternalInterface()
 {
-	return GetAddress(me);
+	return GetDefaultIf().port(port); //returns the ip address of the interface used by the default route
 }
 
 SockAddr_In Configuration::GetInterfaceAddress(const SockAddr_In& s)		//the address of the interface used to send datagrams to supplied address - so you can bind to a specific interface only
